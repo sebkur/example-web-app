@@ -1,0 +1,4 @@
+include 'core', 'core-testing', 'web'
+project(':core').name = 'example-webapp-core'
+project(':core-testing').name = 'example-webapp-core-testing'
+project(':web').name = 'example-webapp-web'
