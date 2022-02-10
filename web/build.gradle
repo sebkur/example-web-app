@@ -1,11 +1,13 @@
 buildscript {
     repositories {
+        mavenLocal()
         maven { url 'https://plugins.gradle.org/m2/' }
         maven { url 'https://mvn.topobyte.de' }
     }
     dependencies {
         classpath 'de.topobyte:gradle-generate-favicons-plugin:0.0.2'
         classpath 'de.topobyte:gradle-cache-busting-plugin:0.0.3'
+        classpath 'com.bmuschko:gradle-tomcat-plugin:2.7.0-local'
     }
 }
 
@@ -15,6 +17,7 @@ plugins {
 
 apply plugin: 'de.topobyte.generate-favicons-gradle-plugin'
 apply plugin: 'de.topobyte.cache-busting-gradle-plugin'
+apply plugin: 'com.bmuschko.tomcat'
 
 dependencies {
     implementation project(':example-webapp-core')
@@ -123,4 +126,33 @@ cacheBusting {
     input += 'res'
     input += 'build/favicons'
     input += 'src/assets/vendor'
+}
+
+dependencies {
+    def tomcatVersion = '8.5.16'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+           "org.apache.tomcat.embed:tomcat-embed-logging-juli:8.5.2",
+           "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+}
+
+tomcat {
+    httpProtocol = 'org.apache.coyote.http11.Http11Nio2Protocol'
+    ajpProtocol  = 'org.apache.coyote.ajp.AjpNio2Protocol'
+    contextPath = "/"
+    resources {
+        resource {
+            path = new File(projectDir, "src/assets/vendor")
+            mountpoint = "/client"
+        }
+        resource {
+            path = new File(projectDir, "build/static")
+            mountpoint = "/"
+        }
+    }
+}
+
+[tomcatRun, tomcatRunWar].each { task ->
+    task.additionalRuntimeResources << new File(projectDir, "build/static")
+    task.additionalRuntimeResources << new File(projectDir, "/logging/devel")
+    task.additionalRuntimeResources << new File(projectDir, "/config/devel")
 }
